@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heart Disease Predictor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+    @media print {
+
+        /* Hide everything */
+        body * {
+            visibility: hidden;
+        }
+
+        /* Show only report */
+        #report-section, #report-section * {
+            visibility: visible;
+        }
+
+        /* Position report properly */
+        #report-section {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+
+        /* Optional: remove background colors for clean medical report */
+        .risk-zone-card,
+        .info-card {
+            box-shadow: none !important;
+            border: 1px solid #ccc !important;
+        }
+    }
+    </style>
+
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🫀 Heart Disease Predictor</h1>
+            <p>Advanced AI-Powered Cardiovascular Risk Assessment</p>
+        </div>
+
+        <!-- Enhanced Result Display -->
+        {% if result %}
+        <div id="report-section" class="result-container">
+            <div class="print-title">
+                <h2>Heart Disease Risk Assessment Report</h2>
+                <p>Date: <script>document.write(new Date().toLocaleDateString())</script></p>
+            </div>
+            <!-- Risk Zone Card -->
+            <div class="risk-zone-card">
+                <div class="risk-header">
+                    <span class="risk-icon">{{ result.zone_icon }}</span>
+                    <h2 class="zone-title">{{ result.risk_zone }}</h2>
+                </div>
+                
+                <div class="probability-display">
+                    <div class="prob-circle">
+                        <div class="prob-number">{{ result.probability }}%</div>
+                        <div class="prob-label">Risk Probability</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risk Factors Card -->
+            {% if result.risk_factors %}
+            <div class="info-card">
+                <h3>🔍 Key Risk Factors Identified</h3>
+                <div class="risk-factors-list">
+                    {% for factor in result.risk_factors %}
+                    <div class="risk-factor-item">
+                        <div class="factor-header">
+                            <span class="factor-name">{{ factor.factor }}</span>
+                            <span class="factor-badge">{{ factor.impact }} impact</span>
+                        </div>
+                        <div class="factor-value">{{ factor.value }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Recommendations Card -->
+            {% if result.recommendations %}
+            <div class="info-card recommendations-card">
+                <h3>💡 Personalized Health Recommendations</h3>
+                <ul class="recommendations-list">
+                    {% for recommendation in result.recommendations %}
+                    <li>{{ recommendation }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <div class="divider"></div>
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="error-card">
+            <h3>❌ Error Occurred</h3>
+            <p>{{ error }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Form Section -->
+        <div class="form-section">
+            <h2 class="form-title">📋 Enter Patient Information</h2>
+            <p class="form-subtitle">💡 Tip: Hover over the ℹ️ icons for more information about each field</p>
+            
+            <form method="POST" action="/predict" id="predictionForm">
+                <div class="form-grid">
+                    
+                    <!-- Age -->
+                    <div class="form-group">
+                        <label>
+                            Age (years)
+                            <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Your current age in years</span>
+                            </span>
+                        </label>
+                        <input type="number" name="age" required min="1" max="120" placeholder="e.g., 45">
+                        <span class="input-hint">Normal range: 20-80 years</span>
+                    </div>
+
+                    <!-- Sex -->
+                    <div class="form-group">
+                        <label>
+                            Sex
+                            <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Biological sex affects heart disease risk</span>
+                            </span>
+                        </label>
+                        <select name="sex" required>
+                            <option value="">Select</option>
+                            <option value="1">Male</option>
+                            <option value="0">Female</option>
+                        </select>
+                    </div>
+
+                    <!-- Chest Pain Type -->
+                    <div class="form-group">
+                        <label>
+                            Chest Pain Type
+                            <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Type of chest discomfort you experience. If none, select Asymptomatic</span>
+                            </span>
+                        </label>
+                        <select name="cp" required>
+                            <option value="">Select</option>
+                            <option value="0">Typical Angina (pressure/squeezing during activity)</option>
+                            <option value="1">Atypical Angina (mild chest discomfort)</option>
+                            <option value="2">Non-Anginal Pain (sharp pain unrelated to heart)</option>
+                            <option value="3">Asymptomatic (no chest pain)</option>
+                        </select>
+                        <span class="input-hint">Select the type that best describes your symptoms</span>
+                    </div>
+
+                    <!-- Resting Blood Pressure -->
+                    <div class="form-group">
+                        <label>
+                            Blood Pressure (mm Hg)
+                            <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Your resting blood pressure (top number). Check your last BP reading or medical report</span>
+                            </span>
+                        </label>
+                        <input type="number" name="trestbps" required min="80" max="200" placeholder="e.g., 120">
+                        <span class="input-hint">Normal: 90-120. If you don't know, use 120</span>
+                    </div>
+
+                    <!-- Cholesterol -->
+                    <div class="form-group">
+                        <label>
+                            Cholesterol Level (mg/dl)
+                            <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Total cholesterol from your blood test report. Find this in recent lab results</span>
+                            </span>
+                        </label>
+                        <input type="number" name="chol" required min="100" max="600" placeholder="e.g., 200">
+                        <span class="input-hint">Normal: 125-200. If unknown, use 200</span>
+                    </div>
+
+                    <!-- Fasting Blood Sugar -->
+                    <div class="form-group">
+                        <label>
+                            High Blood Sugar?
+                            <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Fasting blood sugar > 120 mg/dl indicates diabetes risk. Check your blood sugar test results</span>
+                            </span>
+                        </label>
+                        <select name="fbs" required>
+                            <option value="">Select</option>
+                            <option value="1">Yes (I have diabetes or high sugar)</option>
+                            <option value="0">No (Normal blood sugar)</option>
+                        </select>
+                        <span class="input-hint">Based on fasting blood test (after 8 hours without food)</span>
+                    </div>
+
+                    <!-- Resting ECG -->
+                    <div class="form-group">
+                        <label>
+                            ECG Result
+                            <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Electrocardiogram (heart rhythm test) result. Check your ECG report or select Normal if not tested</span>
+                            </span>
+                        </label>
+                        <select name="restecg" required>
+                            <option value="">Select</option>
+                            <option value="0">Normal (or never tested)</option>
+                            <option value="1">ST-T Wave Abnormality (mild irregularity)</option>
+                            <option value="2">Left Ventricular Hypertrophy (thick heart wall)</option>
+                        </select>
+                        <span class="input-hint">If you haven't had an ECG, select Normal</span>
+                    </div>
+
+                    <!-- Max Heart Rate -->
+                    <div class="form-group">
+                        <label>
+                            Maximum Heart Rate
+                            <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Highest heart rate during exercise/stress test. If unknown, estimate: 220 - your age</span>
+                            </span>
+                        </label>
+                        <input type="number" name="thalach" required min="60" max="220" placeholder="e.g., 150">
+                        <span class="input-hint">During exercise. If unknown, use: 220 - your age</span>
+                    </div>
+
+                    <!-- Exercise Induced Angina -->
+                    <div class="form-group">
+                        <label>
+                            Chest Pain During Exercise?
+                            <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Do you experience chest pain, pressure, or discomfort when walking, climbing stairs, or exercising?</span>
+                            </span>
+                        </label>
+                        <select name="exang" required>
+                            <option value="">Select</option>
+                            <option value="1">Yes (I feel chest discomfort during activity)</option>
+                            <option value="0">No (No chest pain during exercise)</option>
+                        </select>
+                        <span class="input-hint">Important indicator of heart problems</span>
+                    </div>
+
+                    <!-- ST Depression -->
+                    <div class="form-group">
+                        <label>
+                            ST Depression Value
+                            <span class="tooltip">ℹ️
+                                <span class="tooltiptext">A measurement from your ECG stress test report. If you haven't had a stress test, enter 0</span>
+                            </span>
+                        </label>
+                        <input type="number" step="0.1" name="oldpeak" required min="0" max="10" placeholder="e.g., 2.3 or 0">
+                        <span class="input-hint">From ECG stress test. If not tested, enter 0</span>
+                    </div>
+
+                    <!-- Slope -->
+                    <div class="form-group">
+                        <label>
+                            ST Segment Slope
+                            <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Pattern seen on ECG stress test. If not tested, select Upsloping (most common)</span>
+                            </span>
+                        </label>
+                        <select name="slope" required>
+                            <option value="">Select</option>
+                            <option value="0">Upsloping (normal pattern)</option>
+                            <option value="1">Flat</option>
+                            <option value="2">Downsloping (concerning pattern)</option>
+                        </select>
+                        <span class="input-hint">If not tested, select Upsloping</span>
+                    </div>
+
+                    <!-- Major Vessels -->
+                    <div class="form-group">
+                        <label>
+                            Major Vessels Blocked
+                            <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Number of major heart blood vessels with blockage (from angiogram/CT scan). If not tested, select 0</span>
+                            </span>
+                        </label>
+                        <select name="ca" required>
+                            <option value="">Select</option>
+                            <option value="0">0 (No blockage or not tested)</option>
+                            <option value="1">1 vessel blocked</option>
+                            <option value="2">2 vessels blocked</option>
+                            <option value="3">3 vessels blocked</option>
+                        </select>
+                        <span class="input-hint">From cardiac catheterization. If not done, select 0</span>
+                    </div>
+
+                    <!-- Thalassemia -->
+                    <div class="form-group">
+                        <label>
+                            Blood Disorder Test
+                            <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Thalassemia test result. If not tested or normal, select Normal</span>
+                            </span>
+                        </label>
+                        <select name="thal" required>
+                            <option value="">Select</option>
+                            <option value="1">Normal (or not tested)</option>
+                            <option value="2">Fixed Defect</option>
+                            <option value="3">Reversible Defect</option>
+                        </select>
+                        <span class="input-hint">If not tested, select Normal</span>
+                    </div>
+
+                </div>
+
+                <button type="submit" class="submit-btn">🔍 Predict My Risk Level</button>
+            </form>
+        </div>
+
+        <div class="footer">
+            <p>⚠️ <strong>Medical Disclaimer:</strong> This is an AI-powered predictive tool for educational purposes only and is not a substitute for professional medical diagnosis, advice, or treatment. Always consult qualified healthcare professionals for medical decisions.</p>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
